@@ -1,0 +1,49 @@
+{
+  "name": "cursor-selection-summarizer",
+  "displayName": "Cursor Selection Summarizer",
+  "description": "Summarizes highlighted text using Cursor's agent (auto model) and shows it in a sidebar.",
+  "version": "0.0.1",
+  "publisher": "local-dev",
+  "engines": {
+    "vscode": "^1.95.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "main": "./out/extension.js",
+  "activationEvents": [
+    "*"
+  ],
+  "contributes": {
+    "views": {
+      "explorer": [
+        {
+          "id": "cursorSummaryView",
+          "name": "Summary"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "cursorSummary.copy",
+        "title": "Summary: Copy to Clipboard"
+      },
+      {
+        "command": "cursorSummary.refresh",
+        "title": "Summary: Refresh"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.30",
+    "@types/vscode": "^1.95.0",
+    "typescript": "^5.4.5"
+  }
+}
+
