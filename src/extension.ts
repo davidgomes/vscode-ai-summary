@@ -1,4 +1,7 @@
 import * as vscode from 'vscode';
+import { createOpenAI } from '@ai-sdk/openai';
+import { streamText } from 'ai';
+import { createGroq } from '@ai-sdk/groq';
 
 class SummaryViewProvider implements vscode.WebviewViewProvider {
   public static readonly viewType = 'cursorSummaryView';
@@ -61,6 +64,8 @@ let debounceTimer: NodeJS.Timeout | undefined;
 let currentCancellation: vscode.CancellationTokenSource | undefined;
 
 async function summarizeSelection(text: string, view: SummaryViewProvider): Promise<void> {
+  console.log('summarizeSelection', text);
+  
   try {
     currentCancellation?.cancel();
     currentCancellation = new vscode.CancellationTokenSource();
@@ -71,30 +76,25 @@ async function summarizeSelection(text: string, view: SummaryViewProvider): Prom
 
     const instruction = 'You are a concise assistant. Summarize the provided text in 2-4 bullet points, preserving key facts and terminology.';
 
-    // VS Code Language Model API (Cursor provider, auto family)
-    const models = await vscode.lm.selectChatModels({ vendor: 'cursor', family: 'auto' });
-    if (!models || models.length === 0) {
-      view.setSummary('No Cursor chat models available. Ensure Cursor is installed and signed in.');
-      return;
-    }
-    const model = models[0];
+    // const openai = createOpenAI({ apiKey: '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' });
+    const groq = createGroq({ apiKey: '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' });
+    const model = groq('llama-3.1-8b-instant');
+    
+    console.log("text", text);
 
-    const messages: vscode.LanguageModelChatMessage[] = [
-      vscode.LanguageModelChatMessage.User(`${instruction}\n\nSummarize this selection:\n\n${text}`)
-    ];
-
-    const response = await model.sendRequest(
-      messages,
-      {
-        justification: 'Summarize highlighted text',
-        modelOptions: { temperature: 0.2, topK: 40 }
-      },
-      token
-    );
+    const { textStream } = await streamText({
+      model,
+      system: instruction,
+      prompt: `Heavily summarize this selection and return just the summmary, no other text:\n\n${text}`,
+      temperature: 0.2,
+    });
+    
+    console.log('textStream', textStream);
 
     let accumulated = '';
-    for await (const chunk of response.text) {
-      accumulated += chunk;
+    for await (const part of textStream) {
+      if (token.isCancellationRequested) { break; }
+      accumulated += String(part);
       view.setSummary(accumulated);
     }
     view.setSummary(accumulated.trim());

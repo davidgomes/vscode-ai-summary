@@ -2,7 +2,7 @@
   "name": "cursor-selection-summarizer",
   "displayName": "Cursor Selection Summarizer",
   "description": "Summarizes highlighted text using Cursor's agent (auto model) and shows it in a sidebar.",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "publisher": "local-dev",
   "engines": {
     "vscode": "^1.95.0"
@@ -12,14 +12,18 @@
   ],
   "main": "./out/extension.js",
   "activationEvents": [
-    "*"
+    "onStartupFinished",
+    "onView:cursorSummaryView",
+    "onCommand:cursorSummary.refresh",
+    "onCommand:cursorSummary.copy"
   ],
   "contributes": {
     "views": {
       "explorer": [
         {
           "id": "cursorSummaryView",
-          "name": "Summary"
+          "name": "Summary",
+          "type": "webview"
         }
       ]
     },
@@ -44,6 +48,10 @@
     "@types/node": "^20.11.30",
     "@types/vscode": "^1.95.0",
     "typescript": "^5.4.5"
+  },
+  "dependencies": {
+    "@ai-sdk/groq": "^2.0.5",
+    "@ai-sdk/openai": "^2.0.10",
+    "ai": "^5.0.10"
   }
 }
-
