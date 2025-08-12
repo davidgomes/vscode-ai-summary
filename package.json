@@ -1,7 +1,7 @@
 {
-  "name": "cursor-selection-summarizer",
-  "displayName": "Cursor Selection Summarizer",
-  "description": "Summarizes highlighted text using Cursor's agent (auto model) and shows it in a sidebar.",
+  "name": "vscode-ai-summary",
+  "displayName": "AI Summary",
+  "description": "Summarize selected text using Groq models and show it in a sidebar.",
   "version": "0.0.2",
   "publisher": "local-dev",
   "engines": {
@@ -11,13 +11,19 @@
     "Other"
   ],
   "main": "./out/extension.js",
-  "activationEvents": [
-    "onStartupFinished",
-    "onView:cursorSummaryView",
-    "onCommand:cursorSummary.refresh",
-    "onCommand:cursorSummary.copy"
-  ],
+  
   "contributes": {
+    "configuration": {
+      "title": "AI Summary",
+      "properties": {
+        "aiSummary.groqApiKey": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Optional. Groq API key. Prefer using the command 'AI Summary: Register Groq API Key' to store it securely in Secret Storage. You can also set the `GROQ_API_KEY` environment variable.",
+          "scope": "application"
+        }
+      }
+    },
     "views": {
       "explorer": [
         {
@@ -28,6 +34,10 @@
       ]
     },
     "commands": [
+      {
+        "command": "aiSummary.registerGroqApiKey",
+        "title": "AI Summary: Register Groq API Key"
+      },
       {
         "command": "cursorSummary.copy",
         "title": "Summary: Copy to Clipboard"

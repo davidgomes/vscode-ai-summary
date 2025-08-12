@@ -62,6 +62,34 @@ class SummaryViewProvider implements vscode.WebviewViewProvider {
 
 let debounceTimer: NodeJS.Timeout | undefined;
 let currentCancellation: vscode.CancellationTokenSource | undefined;
+let extensionContext: vscode.ExtensionContext | undefined;
+
+const SECRET_STORAGE_KEY = 'aiSummary.groqApiKey';
+
+async function getGroqApiKey(): Promise<string | undefined> {
+  // Prefer Secret Storage
+  if (extensionContext) {
+    const secret = await extensionContext.secrets.get(SECRET_STORAGE_KEY);
+    if (secret && secret.trim()) {
+      return secret.trim();
+    }
+  }
+
+  // Fallback to configuration setting
+  const config = vscode.workspace.getConfiguration('aiSummary');
+  const configured: string | undefined = config.get('groqApiKey');
+  if (configured && configured.trim()) {
+    return configured.trim();
+  }
+
+  // Fallback to environment variable
+  const fromEnv = process.env.GROQ_API_KEY;
+  if (fromEnv && fromEnv.trim()) {
+    return fromEnv.trim();
+  }
+
+  return undefined;
+}
 
 async function summarizeSelection(text: string, view: SummaryViewProvider): Promise<void> {
   console.log('summarizeSelection', text);
@@ -74,14 +102,17 @@ async function summarizeSelection(text: string, view: SummaryViewProvider): Prom
     view.setSummary('');
     vscode.commands.executeCommand('setContext', 'cursorSummary.loading', true);
 
-    const instruction = 'You are a concise assistant. Summarize the provided text in 2-4 bullet points, preserving key facts and terminology.';
+    const instruction = 'You are a concise assistant. Summarize the provided text in 1-3 bullet points, preserving key facts and terminology.';
 
-    // const openai = createOpenAI({ apiKey: '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' });
-    const groq = createGroq({ apiKey: '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' });
+    const apiKey = await getGroqApiKey();
+    if (!apiKey) {
+      vscode.window.showErrorMessage('Groq API key not set. Run "AI Summary: Register Groq API Key" to configure.');
+      return;
+    }
+
+    const groq = createGroq({ apiKey });
     const model = groq('llama-3.1-8b-instant');
     
-    console.log("text", text);
-
     const { textStream } = await streamText({
       model,
       system: instruction,
@@ -106,10 +137,30 @@ async function summarizeSelection(text: string, view: SummaryViewProvider): Prom
 }
 
 export function activate(context: vscode.ExtensionContext) {
+  extensionContext = context;
   const provider = new SummaryViewProvider();
 
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider(SummaryViewProvider.viewType, provider)
+  );
+
+  // Command: Register Groq API Key (stores in Secret Storage)
+  context.subscriptions.push(
+    vscode.commands.registerCommand('aiSummary.registerGroqApiKey', async () => {
+      const value = await vscode.window.showInputBox({
+        title: 'AI Summary: Register Groq API Key',
+        prompt: 'Enter your Groq API key (stored securely in Secret Storage).',
+        placeHolder: 'gsk_...'
+        , password: true,
+        ignoreFocusOut: true,
+        validateInput: (val) => (val && val.trim().length > 0 ? undefined : 'API key cannot be empty')
+      });
+      if (!value) {
+        return;
+      }
+      await context.secrets.store(SECRET_STORAGE_KEY, value.trim());
+      vscode.window.showInformationMessage('Groq API key saved securely.');
+    })
   );
 
   context.subscriptions.push(
