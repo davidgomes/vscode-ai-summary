@@ -102,7 +102,7 @@ async function summarizeSelection(text: string, view: SummaryViewProvider): Prom
     view.setSummary('');
     vscode.commands.executeCommand('setContext', 'cursorSummary.loading', true);
 
-    const instruction = 'You are a concise assistant. Summarize the provided text in 1-3 bullet points, preserving key facts and terminology.';
+    const instruction = 'You are a concise coding assistant. Summarize the provided text in 1-3 bullet points, preserving key facts and terminology. Do not include obvious information like "this is an async function" or "this is a for loop". Your English should be extremely brief, e.g., instead of saying "this is an async function", you should say "async function" and instead of saying "the function returns <foo>", just say "returns <foo>". Instead of saying "The code defines a function named ...", just say "function named ...';
 
     const apiKey = await getGroqApiKey();
     if (!apiKey) {
@@ -116,12 +116,10 @@ async function summarizeSelection(text: string, view: SummaryViewProvider): Prom
     const { textStream } = await streamText({
       model,
       system: instruction,
-      prompt: `Heavily summarize this selection and return just the summmary, no other text:\n\n${text}`,
+      prompt: `Summarize the provided text in 1-3 bullet points, preserving key facts and terminology. Do not include obvious information like "this is an async function" or "this is a for loop". Your English should be extremely brief, e.g., instead of saying "this is an async function", you should say "async function" and instead of saying "the function returns <foo>", just say "returns <foo>". Instead of saying "The code defines a function named ...", just say "function named ...: Do not return anyother text, just the summary.\n${text}`,
       temperature: 0.2,
     });
     
-    console.log('textStream', textStream);
-
     let accumulated = '';
     for await (const part of textStream) {
       if (token.isCancellationRequested) { break; }
