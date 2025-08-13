@@ -2,7 +2,7 @@
 
 This VSCode extension continuously summarizes whatever text you're highlighting in VSCode/Cursor in your sidebar.
 
-![Video](./demo_video.mp4)
+![Demo](./demo_video.gif)
 
 ## Requirements
 - A Groq API key
