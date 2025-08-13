@@ -1,17 +1,13 @@
 {
   "name": "vscode-ai-summary",
   "displayName": "AI Summary",
-  "description": "Summarize selected text using Groq models and show it in a sidebar.",
+  "description": "Continuously summarizes the code you are reading in the sidebar.",
   "version": "0.0.2",
   "publisher": "local-dev",
   "engines": {
     "vscode": "^1.95.0"
   },
-  "categories": [
-    "Other"
-  ],
   "main": "./out/extension.js",
-  
   "contributes": {
     "configuration": {
       "title": "AI Summary",
@@ -39,12 +35,8 @@
         "title": "AI Summary: Register Groq API Key"
       },
       {
-        "command": "cursorSummary.copy",
-        "title": "Summary: Copy to Clipboard"
-      },
-      {
-        "command": "cursorSummary.refresh",
-        "title": "Summary: Refresh"
+        "command": "aiSummary.copy",
+        "title": "AI Summary: Copy Summary to Clipboard"
       }
     ]
   },
@@ -55,13 +47,13 @@
     "package": "vsce package"
   },
   "devDependencies": {
-    "@types/node": "^20.11.30",
-    "@types/vscode": "^1.95.0",
-    "typescript": "^5.4.5"
+    "@types/node": "20.11.30",
+    "@types/vscode": "1.95.0",
+    "typescript": "5.4.5"
   },
   "dependencies": {
-    "@ai-sdk/groq": "^2.0.5",
-    "@ai-sdk/openai": "^2.0.10",
-    "ai": "^5.0.10"
+    "@ai-sdk/groq": "2.0.5",
+    "@ai-sdk/openai": "2.0.10",
+    "ai": "5.0.10"
   }
 }

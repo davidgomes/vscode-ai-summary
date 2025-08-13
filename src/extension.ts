@@ -1,5 +1,4 @@
 import * as vscode from 'vscode';
-import { createOpenAI } from '@ai-sdk/openai';
 import { streamText } from 'ai';
 import { createGroq } from '@ai-sdk/groq';
 
@@ -92,8 +91,6 @@ async function getGroqApiKey(): Promise<string | undefined> {
 }
 
 async function summarizeSelection(text: string, view: SummaryViewProvider): Promise<void> {
-  console.log('summarizeSelection', text);
-  
   try {
     currentCancellation?.cancel();
     currentCancellation = new vscode.CancellationTokenSource();
@@ -162,17 +159,6 @@ export function activate(context: vscode.ExtensionContext) {
   );
 
   context.subscriptions.push(
-    vscode.commands.registerCommand('cursorSummary.refresh', async () => {
-      const editor = vscode.window.activeTextEditor;
-      if (!editor) { return; }
-      const selection = editor.selection;
-      if (selection.isEmpty) { return; }
-      const text = editor.document.getText(selection);
-      await summarizeSelection(text, provider);
-    })
-  );
-
-  context.subscriptions.push(
     vscode.commands.registerCommand('cursorSummary.copy', async () => {
       const editor = vscode.window.activeTextEditor;
       if (!editor) { return; }
@@ -207,5 +193,3 @@ export function activate(context: vscode.ExtensionContext) {
 export function deactivate() {
   currentCancellation?.cancel();
 }
-
-
