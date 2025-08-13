@@ -135,11 +135,7 @@ async function summarizeSelection(
   } catch (err: any) {
     view.setSummary(`Error: ${err?.message ?? String(err)}`);
   } finally {
-    vscode.commands.executeCommand(
-      "setContext",
-      "aiSummary.loading",
-      false
-    );
+    vscode.commands.executeCommand("setContext", "aiSummary.loading", false);
   }
 }
 
