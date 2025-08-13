@@ -1,12 +1,12 @@
-import * as vscode from 'vscode';
-import { streamText } from 'ai';
-import { createGroq } from '@ai-sdk/groq';
+import * as vscode from "vscode";
+import { streamText } from "ai";
+import { createGroq } from "@ai-sdk/groq";
 
 class SummaryViewProvider implements vscode.WebviewViewProvider {
-  public static readonly viewType = 'cursorSummaryView';
+  public static readonly viewId = "aiSummaryView";
   private _view?: vscode.WebviewView;
 
-  private _lastSummary: string = '';
+  private _lastSummary: string = "";
 
   resolveWebviewView(
     webviewView: vscode.WebviewView,
@@ -21,15 +21,15 @@ class SummaryViewProvider implements vscode.WebviewViewProvider {
   setSummary(summary: string) {
     this._lastSummary = summary;
     if (this._view) {
-      this._view.webview.postMessage({ type: 'summary', value: summary });
+      this._view.webview.postMessage({ type: "summary", value: summary });
     }
   }
 
   private getHtml(initial: string): string {
     const escaped = initial
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;');
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
     return `<!DOCTYPE html>
 <html>
 <head>
@@ -63,7 +63,7 @@ let debounceTimer: NodeJS.Timeout | undefined;
 let currentCancellation: vscode.CancellationTokenSource | undefined;
 let extensionContext: vscode.ExtensionContext | undefined;
 
-const SECRET_STORAGE_KEY = 'aiSummary.groqApiKey';
+const SECRET_STORAGE_KEY = "aiSummary.groqApiKey";
 
 async function getGroqApiKey(): Promise<string | undefined> {
   // Prefer Secret Storage
@@ -75,8 +75,8 @@ async function getGroqApiKey(): Promise<string | undefined> {
   }
 
   // Fallback to configuration setting
-  const config = vscode.workspace.getConfiguration('aiSummary');
-  const configured: string | undefined = config.get('groqApiKey');
+  const config = vscode.workspace.getConfiguration("aiSummary");
+  const configured: string | undefined = config.get("groqApiKey");
   if (configured && configured.trim()) {
     return configured.trim();
   }
@@ -90,36 +90,44 @@ async function getGroqApiKey(): Promise<string | undefined> {
   return undefined;
 }
 
-async function summarizeSelection(text: string, view: SummaryViewProvider): Promise<void> {
+async function summarizeSelection(
+  text: string,
+  view: SummaryViewProvider
+): Promise<void> {
   try {
     currentCancellation?.cancel();
     currentCancellation = new vscode.CancellationTokenSource();
     const token = currentCancellation.token;
 
-    view.setSummary('');
-    vscode.commands.executeCommand('setContext', 'cursorSummary.loading', true);
+    view.setSummary("");
+    vscode.commands.executeCommand("setContext", "aiSummary.loading", true);
 
-    const instruction = 'You are a concise coding assistant. Summarize the provided text in 1-3 bullet points, preserving key facts and terminology. Do not include obvious information like "this is an async function" or "this is a for loop". Your English should be extremely brief, e.g., instead of saying "this is an async function", you should say "async function" and instead of saying "the function returns <foo>", just say "returns <foo>". Instead of saying "The code defines a function named ...", just say "function named ...';
+    const instruction =
+      'You are a concise coding assistant. Summarize the provided text in 1-3 bullet points, preserving key facts and terminology. Do not include obvious information like "this is an async function" or "this is a for loop". Your English should be extremely brief, e.g., instead of saying "this is an async function", you should say "async function" and instead of saying "the function returns <foo>", just say "returns <foo>". Instead of saying "The code defines a function named ...", just say "function named ...';
 
     const apiKey = await getGroqApiKey();
     if (!apiKey) {
-      vscode.window.showErrorMessage('Groq API key not set. Run "AI Summary: Register Groq API Key" to configure.');
+      vscode.window.showErrorMessage(
+        'Groq API key not set. Run "AI Summary: Register Groq API Key" to configure.'
+      );
       return;
     }
 
     const groq = createGroq({ apiKey });
-    const model = groq('llama-3.1-8b-instant');
-    
+    const model = groq("llama-3.1-8b-instant");
+
     const { textStream } = await streamText({
       model,
       system: instruction,
       prompt: `Summarize the provided text in 1-3 bullet points, preserving key facts and terminology. Do not include obvious information like "this is an async function" or "this is a for loop". Your English should be extremely brief, e.g., instead of saying "this is an async function", you should say "async function" and instead of saying "the function returns <foo>", just say "returns <foo>". Instead of saying "The code defines a function named ...", just say "function named ...: Do not return anyother text, just the summary.\n${text}`,
       temperature: 0.2,
     });
-    
-    let accumulated = '';
+
+    let accumulated = "";
     for await (const part of textStream) {
-      if (token.isCancellationRequested) { break; }
+      if (token.isCancellationRequested) {
+        break;
+      }
       accumulated += String(part);
       view.setSummary(accumulated);
     }
@@ -127,7 +135,11 @@ async function summarizeSelection(text: string, view: SummaryViewProvider): Prom
   } catch (err: any) {
     view.setSummary(`Error: ${err?.message ?? String(err)}`);
   } finally {
-    vscode.commands.executeCommand('setContext', 'cursorSummary.loading', false);
+    vscode.commands.executeCommand(
+      "setContext",
+      "aiSummary.loading",
+      false
+    );
   }
 }
 
@@ -135,37 +147,61 @@ export function activate(context: vscode.ExtensionContext) {
   extensionContext = context;
   const provider = new SummaryViewProvider();
 
-  context.subscriptions.push(
-    vscode.window.registerWebviewViewProvider(SummaryViewProvider.viewType, provider)
+  // Register the webview provider, but first check if it's already registered
+  const existingProvider = vscode.window.visibleTextEditors.find(
+    (editor) => editor.viewColumn === vscode.ViewColumn.One
   );
+  if (!existingProvider) {
+    context.subscriptions.push(
+      vscode.window.registerWebviewViewProvider(
+        SummaryViewProvider.viewId,
+        provider
+      )
+    );
+  }
 
   // Command: Register Groq API Key (stores in Secret Storage)
   context.subscriptions.push(
-    vscode.commands.registerCommand('aiSummary.registerGroqApiKey', async () => {
-      const value = await vscode.window.showInputBox({
-        title: 'AI Summary: Register Groq API Key',
-        prompt: 'Enter your Groq API key (stored securely in Secret Storage).',
-        placeHolder: 'gsk_...'
-        , password: true,
-        ignoreFocusOut: true,
-        validateInput: (val) => (val && val.trim().length > 0 ? undefined : 'API key cannot be empty')
-      });
-      if (!value) {
-        return;
+    vscode.commands.registerCommand(
+      "aiSummary.registerGroqApiKey",
+      async () => {
+        const value = await vscode.window.showInputBox({
+          title: "AI Summary: Register Groq API Key",
+          prompt:
+            "Enter your Groq API key (stored securely in Secret Storage).",
+          placeHolder: "gsk_...",
+          password: true,
+          ignoreFocusOut: true,
+          validateInput: (val) =>
+            val && val.trim().length > 0
+              ? undefined
+              : "API key cannot be empty",
+        });
+
+        if (!value) {
+          return;
+        }
+
+        await context.secrets.store(SECRET_STORAGE_KEY, value.trim());
+        vscode.window.showInformationMessage("Groq API key saved securely.");
       }
-      await context.secrets.store(SECRET_STORAGE_KEY, value.trim());
-      vscode.window.showInformationMessage('Groq API key saved securely.');
-    })
+    )
   );
 
   context.subscriptions.push(
-    vscode.commands.registerCommand('cursorSummary.copy', async () => {
+    vscode.commands.registerCommand("aiSummary.copy", async () => {
       const editor = vscode.window.activeTextEditor;
-      if (!editor) { return; }
+      if (!editor) {
+        return;
+      }
+
       // Copy last summary by reading from visible view via command: retrieve isn't available, so keep local state
       // We already store last summary in provider
-      await vscode.env.clipboard.writeText((provider as any)._lastSummary || '');
-      vscode.window.showInformationMessage('Summary copied to clipboard');
+      await vscode.env.clipboard.writeText(
+        (provider as any)._lastSummary || ""
+      );
+
+      vscode.window.showInformationMessage("Summary copied to clipboard");
     })
   );
 
@@ -174,15 +210,21 @@ export function activate(context: vscode.ExtensionContext) {
       const editor = e.textEditor;
       const selection = editor.selection;
       if (!editor || selection.isEmpty) {
-        provider.setSummary('');
+        provider.setSummary("");
         return;
       }
+
       const text = editor.document.getText(selection);
+
       if (!text.trim()) {
-        provider.setSummary('');
+        provider.setSummary("");
         return;
       }
-      if (debounceTimer) { clearTimeout(debounceTimer); }
+
+      if (debounceTimer) {
+        clearTimeout(debounceTimer);
+      }
+
       debounceTimer = setTimeout(() => {
         void summarizeSelection(text, provider);
       }, 350);

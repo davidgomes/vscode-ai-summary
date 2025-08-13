@@ -2,8 +2,12 @@
   "name": "vscode-ai-summary",
   "displayName": "AI Summary",
   "description": "Continuously summarizes the code you are reading in the sidebar.",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "publisher": "local-dev",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/<owner>/<repo>.git"
+  },
   "engines": {
     "vscode": "^1.95.0"
   },
@@ -23,7 +27,7 @@
     "views": {
       "explorer": [
         {
-          "id": "cursorSummaryView",
+          "id": "aiSummaryView",
           "name": "Summary",
           "type": "webview"
         }
@@ -49,11 +53,11 @@
   "devDependencies": {
     "@types/node": "20.11.30",
     "@types/vscode": "1.95.0",
-    "typescript": "5.4.5"
+    "typescript": "5.4.5",
+    "@vscode/vsce": "3.6.0"
   },
   "dependencies": {
     "@ai-sdk/groq": "2.0.5",
-    "@ai-sdk/openai": "2.0.10",
     "ai": "5.0.10"
   }
 }
