@@ -2,7 +2,7 @@
   "name": "vscode-ai-summary",
   "displayName": "AI Summary",
   "description": "Continuously summarizes the code you are reading in the sidebar.",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "publisher": "DavidGomes",
   "repository": {
     "type": "git",
