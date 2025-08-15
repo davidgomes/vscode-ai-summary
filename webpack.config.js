@@ -1,18 +1,22 @@
 const path = require('path');
 
-module.exports = {
-  target: 'node',
-  mode: 'none',
-  entry: './src/extension.ts',
+/**@type {import('webpack').Configuration}*/
+const config = {
+  target: 'node', // vscode extensions run in a Node.js context
+  entry: './src/extension.ts', // the entry point of this extension
   output: {
-    path: path.resolve(__dirname, 'extension'),
+    // the bundle is stored in the 'out' folder (check package.json)
+    path: path.resolve(__dirname, 'out'),
     filename: 'extension.js',
-    libraryTarget: 'commonjs2'
+    libraryTarget: 'commonjs2',
+    devtoolModuleFilenameTemplate: '../[resource-path]'
   },
+  devtool: 'source-map',
   externals: {
-    vscode: 'commonjs vscode'
+    vscode: 'commonjs vscode' // the vscode-module is created on-the-fly and must be excluded
   },
   resolve: {
+    // support reading TypeScript and JavaScript files
     extensions: ['.ts', '.js']
   },
   module: {
@@ -27,6 +31,6 @@ module.exports = {
         ]
       }
     ]
-  },
-  devtool: 'nosources-source-map'
+  }
 };
+module.exports = config;
