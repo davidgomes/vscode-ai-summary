@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Build outputs (will be compiled)
+out/
+extension/
+extension.js
+extension.js.map
+
+# Source maps
+*.map
+
+# Development files
+.DS_Store
+*.vsix
+*.log
+
+# Git
+.git/
+.github/
+
+# Documentation and demo files
+demo_video.gif
+
+# TypeScript source (will be compiled)
+src/
+tsconfig.json
+
+# Cursor-specific files
+cursor-selection-summarizer-*
